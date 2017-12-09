@@ -19,7 +19,7 @@ def signal_handler(signal, frame):
 
 def arp_display(pkt):
     mac = ""
-
+    matched_button = False
     try:
         mac = pkt[ARP].hwsrc.lower()
     except:
@@ -32,6 +32,7 @@ def arp_display(pkt):
             button = config['buttons'][idx]
 
             logging.info(button['name'] + " button pressed!")
+            matched_button = True
             logging.info("Request: " + button['url'])
             
             try:
@@ -45,7 +46,11 @@ def arp_display(pkt):
             except:
                 logging.exception("Unable to perform  request: Check url, body and headers format. Check API password")
 
-            return True
+    if matched_button:
+        logging.info("Packet captured, waiting 3s ...")
+        time.sleep(3)
+
+    return matched_button
 
 # Catch SIGINT/SIGTERM Signals
 signal.signal(signal.SIGINT, signal_handler)
@@ -78,6 +83,5 @@ with open(path + '/data/options.json', mode='r') as data_file:
 while True:
     # Start sniffing
     logging.info("Starting sniffing...")
-    sniff(stop_filter=arp_display, filter='arp or (udp and src port 68 and dst port 67 and src host 0.0.0.0)', store=0, count=0)
-    logging.info("Packet captured, waiting 20s ...")
-    time.sleep(20)
+    sniff(stop_filter=arp_display, iface=config['iface'], filter='arp or (udp and src port 68 and dst port 67 and src host 0.0.0.0)', store=0, count=0)
+    
